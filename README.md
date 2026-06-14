@@ -102,25 +102,6 @@ When you ask OChat to edit notes, the model must return structured patch JSON wi
 
 Review mode is on by default. With review mode enabled, proposed edits are shown in the OChat sidebar and require approval. If you turn review mode off, valid Markdown patches are applied automatically.
 
-## Release checklist
-
-- Update `manifest.json` and `versions.json` for the release version.
-- Run `npm test`, `npm run lint`, and `npm run build`.
-- Create a GitHub release whose tag exactly matches the manifest version, for example `0.1.0`.
-- Upload `main.js`, `manifest.json`, and `styles.css` as release assets.
-- Submit the repository URL through `community.obsidian.md` for the first community-plugin review. The community directory reads `manifest.json` from the default branch and installs assets from the matching GitHub release.
-- Before public release, add `fundingUrl` to `manifest.json` only after the real GitHub Sponsors URL is available.
-
-Example funding metadata:
-
-```json
-{
-	"fundingUrl": {
-		"GitHub Sponsors": "https://github.com/sponsors/YOUR_HANDLE"
-	}
-}
-```
-
 ## License
 
 MIT
