@@ -1,0 +1,9 @@
+{
+	"id": "ochat",
+	"name": "OChat",
+	"version": "0.1.0",
+	"minAppVersion": "1.12.7",
+	"description": "Chat with local models using active note and vault context.",
+	"author": "Raniendu",
+	"isDesktopOnly": false
+}
