@@ -1,40 +1,247 @@
 .ochat-view {
+	--ochat-border: var(--background-modifier-border);
+	--ochat-border-hover: var(--background-modifier-border-hover, var(--background-modifier-border));
+	--ochat-panel: var(--background-secondary);
+	--ochat-panel-alt: var(--background-primary-alt, var(--background-secondary));
+	--ochat-accent: var(--interactive-accent);
+	background: var(--background-primary);
+	color: var(--text-normal);
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 	height: 100%;
-	padding: 10px;
+	min-height: 0;
+	overflow: hidden;
+	padding: 0 !important;
 }
 
-.ochat-actions {
+.ochat-header {
+	align-items: center;
+	border-bottom: 1px solid var(--ochat-border);
 	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
+	flex: 0 0 44px;
+	justify-content: space-between;
+	padding: 0 10px 0 14px;
 }
 
-.ochat-status {
+.ochat-brand,
+.ochat-header-actions,
+.ochat-composer-controls,
+.ochat-composer-actions,
+.ochat-status-connection,
+.ochat-status-state,
+.ochat-context-active-status {
+	align-items: center;
+	display: flex;
+}
+
+.ochat-brand {
+	gap: 8px;
+	min-width: 0;
+}
+
+.ochat-brand-name {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.ochat-connection-dot,
+.ochat-context-active-dot,
+.ochat-status-dot,
+.ochat-thinking-pulse {
+	background: var(--color-green);
+	border-radius: 50%;
+	display: inline-block;
+	height: 7px;
+	width: 7px;
+}
+
+.ochat-header-actions {
+	gap: 2px;
+}
+
+.ochat-icon-button,
+.ochat-send-button,
+.ochat-context-remove {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
 	color: var(--text-muted);
+	display: inline-flex;
+	height: 28px;
+	justify-content: center;
+	min-height: 28px;
+	min-width: 28px;
+	padding: 4px;
+	width: 28px;
+}
+
+.ochat-icon-button:hover,
+.ochat-icon-button:focus-visible,
+.ochat-context-remove:hover,
+.ochat-context-remove:focus-visible {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.ochat-icon-button:focus-visible,
+.ochat-context-remove:focus-visible,
+.ochat-context-add:focus-visible,
+.ochat-mode-toggle-button:focus-visible,
+.ochat-send-button:focus-visible {
+	box-shadow: 0 0 0 1px var(--ochat-accent);
+	outline: 0;
+}
+
+.ochat-context {
+	border-bottom: 1px solid var(--ochat-border);
+	flex: 0 0 auto;
+	padding: 12px 14px;
+}
+
+.ochat-context-heading {
+	align-items: center;
+	color: var(--text-muted);
+	display: flex;
 	font-size: var(--font-ui-smaller);
-	min-height: 18px;
+	font-weight: var(--font-semibold);
+	justify-content: space-between;
+	letter-spacing: 0.07em;
+	margin-bottom: 7px;
+	text-transform: uppercase;
+}
+
+.ochat-context-search-status {
+	font-size: 9px;
+	font-weight: var(--font-medium);
+	letter-spacing: 0;
+	opacity: 0.8;
+	text-transform: none;
+}
+
+.ochat-context-card {
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.ochat-context-row,
+.ochat-context-add {
+	align-items: center;
+	border-bottom: 1px solid var(--ochat-border);
+	box-sizing: border-box;
+	display: flex;
+	gap: 8px;
+	min-height: 34px;
+	padding: 4px 8px;
+	width: 100%;
+}
+
+.ochat-context-row:last-child,
+.ochat-context-add:last-child {
+	border-bottom: 0;
+}
+
+.ochat-context-row-active {
+	background: var(--background-modifier-hover);
+}
+
+.ochat-context-row-empty {
+	color: var(--text-muted);
+}
+
+.ochat-context-icon {
+	align-items: center;
+	color: var(--text-muted);
+	display: inline-flex;
+	flex: 0 0 16px;
+	justify-content: center;
+}
+
+.ochat-context-icon svg {
+	height: 16px;
+	width: 16px;
+}
+
+.ochat-context-path {
+	flex: 1;
+	font-size: var(--font-ui-small);
+	min-width: 0;
+	overflow: hidden;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ochat-context-active-status {
+	color: var(--color-green);
+	font-size: var(--font-ui-smaller);
+	gap: 5px;
+}
+
+.ochat-context-add {
+	background: transparent;
+	border-left: 0;
+	border-radius: 0;
+	border-right: 0;
+	border-top: 0;
+	box-shadow: none;
+	color: var(--text-muted);
+	justify-content: flex-start;
+}
+
+.ochat-context-add:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.ochat-keycap {
+	border: 1px solid var(--ochat-border-hover);
+	border-radius: 3px;
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-size: 10px;
+	line-height: 16px;
+	min-width: 18px;
+	padding: 0 4px;
+	text-align: center;
 }
 
 .ochat-setup {
+	background: var(--ochat-panel-alt);
+	border-bottom: 1px solid var(--ochat-border);
 	display: flex;
+	flex: 0 0 auto;
 	flex-direction: column;
-	gap: 8px;
-	padding-bottom: 4px;
+	gap: 9px;
+	max-height: 260px;
+	overflow: auto;
+	padding: 12px 14px;
+}
+
+.ochat-setup:empty {
+	display: none;
 }
 
 .ochat-connection-title {
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
 }
 
-.ochat-muted {
+.ochat-muted,
+.ochat-warning {
 	color: var(--text-muted);
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-smaller);
+}
+
+.ochat-warning {
+	color: var(--text-warning);
 }
 
 .ochat-setting-row {
@@ -49,59 +256,195 @@
 	font-weight: var(--font-medium);
 }
 
-.ochat-model-picker,
-.ochat-context-picker,
+.ochat-endpoint-input,
 .ochat-context-search,
-.ochat-endpoint-input {
+.ochat-context-picker {
 	max-width: 100%;
+	width: 100%;
 }
 
-.ochat-warning {
-	color: var(--text-warning);
-	margin-top: 6px;
+.ochat-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+}
+
+.ochat-setup > .ochat-actions {
+	justify-content: flex-start;
+}
+
+.ochat-context-list,
+.ochat-context-results {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.ochat-context-list {
+	gap: 5px;
+}
+
+.ochat-context-file {
+	align-items: center;
+	background: var(--background-primary);
+	border: 1px solid var(--ochat-border);
+	border-radius: 4px;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	padding: 5px 7px;
+}
+
+.ochat-context-file span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ochat-context-results {
+	max-height: 150px;
+	overflow: auto;
+}
+
+.ochat-context-result,
+.ochat-mention-suggestion {
+	background: transparent;
+	border: 0;
+	border-radius: 3px;
+	box-shadow: none;
+	justify-content: flex-start;
+	overflow: hidden;
+	padding: 5px 7px;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.ochat-context-result:hover,
+.ochat-mention-suggestion:hover {
+	background: var(--background-modifier-hover);
 }
 
 .ochat-transcript {
 	display: flex;
-	flex: 1;
+	flex: 1 1 auto;
 	flex-direction: column;
-	gap: 10px;
 	min-height: 0;
 	overflow: auto;
+	overscroll-behavior: contain;
 }
 
 .ochat-empty {
+	align-items: center;
 	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	padding: 12px 0;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+	margin: auto;
+	max-width: 320px;
+	padding: 28px 20px;
+	text-align: center;
 }
 
-.ochat-message,
-.ochat-review {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 10px;
-	width: 100%;
+.ochat-empty-icon {
+	align-items: center;
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border);
+	border-radius: 50%;
+	color: var(--color-green);
+	display: flex;
+	height: 40px;
+	justify-content: center;
+	margin-bottom: 10px;
+	width: 40px;
 }
 
-.ochat-message-role,
-.ochat-review-title,
-.ochat-patch-path {
-	color: var(--text-muted);
-	font-size: var(--font-ui-smaller);
+.ochat-empty-title {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
-	margin-bottom: 6px;
-	text-transform: uppercase;
+	margin-bottom: 5px;
+}
+
+.ochat-empty-copy {
+	font-size: var(--font-ui-smaller);
+	line-height: 1.45;
+}
+
+.ochat-empty-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: center;
+	margin-top: 14px;
+}
+
+.ochat-message {
+	border-bottom: 1px solid var(--ochat-border);
+	display: grid;
+	grid-template-columns: 32px minmax(0, 1fr);
+	padding: 16px 14px;
+}
+
+.ochat-message-avatar {
+	align-items: center;
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border);
+	border-radius: 50%;
+	color: var(--text-muted);
+	display: flex;
+	height: 24px;
+	justify-content: center;
+	margin-top: -2px;
+	width: 24px;
+}
+
+.ochat-message-assistant .ochat-message-avatar {
+	color: var(--color-green);
+}
+
+.ochat-message-avatar svg {
+	height: 14px;
+	width: 14px;
+}
+
+.ochat-message-body {
+	min-width: 0;
+}
+
+.ochat-message-header {
+	align-items: baseline;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	margin-bottom: 9px;
+}
+
+.ochat-message-role {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ochat-message-time {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
 }
 
 .ochat-user-content {
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
 	white-space: pre-wrap;
 }
 
 .ochat-markdown {
 	font-family: var(--font-text);
-	font-size: var(--font-ui-medium);
+	font-size: var(--font-ui-small);
 	line-height: var(--line-height-normal);
 	max-width: 100%;
 	overflow-wrap: anywhere;
@@ -116,11 +459,33 @@
 	margin-bottom: 0;
 }
 
+.ochat-markdown h1,
+.ochat-markdown h2,
+.ochat-markdown h3 {
+	font-size: var(--font-ui-medium);
+	line-height: 1.35;
+	margin: 1em 0 0.45em;
+}
+
+.ochat-markdown p,
+.ochat-markdown ul,
+.ochat-markdown ol {
+	margin-block: 0.55em;
+}
+
+.ochat-markdown code {
+	background: var(--background-modifier-hover);
+	border: 1px solid var(--ochat-border);
+	border-radius: 3px;
+	font-size: 0.9em;
+	padding: 1px 4px;
+}
+
 .ochat-thinking {
-	border-bottom: 1px solid var(--background-modifier-border);
+	border: 0;
 	color: var(--text-muted);
-	margin-bottom: 8px;
-	padding-bottom: 8px;
+	margin: 0 0 8px;
+	padding: 0;
 }
 
 .ochat-thinking summary {
@@ -129,29 +494,339 @@
 	font-weight: var(--font-medium);
 }
 
-.ochat-thinking-live {
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	font-style: italic;
-}
-
-.ochat-thinking pre,
-.ochat-patch pre {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+.ochat-thinking pre {
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border);
 	border-radius: 4px;
-	margin: 6px 0;
+	font-size: var(--font-ui-smaller);
+	margin: 7px 0;
 	max-width: 100%;
 	overflow: auto;
 	padding: 8px;
 	white-space: pre-wrap;
 }
 
+.ochat-thinking-live {
+	align-items: center;
+	color: var(--text-muted);
+	display: flex;
+	font-size: var(--font-ui-small);
+	gap: 7px;
+}
+
+.ochat-thinking-pulse {
+	animation: ochat-pulse 1.25s ease-in-out infinite;
+	background: var(--ochat-accent);
+}
+
+@keyframes ochat-pulse {
+	0%,
+	100% {
+		opacity: 0.35;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+.ochat-review {
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border-hover);
+	border-radius: 5px;
+	box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+	margin: 14px;
+	overflow: hidden;
+}
+
+.ochat-review-header {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+	padding: 10px 12px;
+}
+
+.ochat-review-icon {
+	color: var(--ochat-accent);
+	display: inline-flex;
+}
+
+.ochat-review-heading {
+	min-width: 0;
+}
+
+.ochat-review-title {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ochat-review-subtitle,
+.ochat-patch-path {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	margin-top: 2px;
+}
+
+.ochat-patch {
+	border-top: 1px solid var(--ochat-border);
+}
+
+.ochat-patch-path,
+.ochat-patch-rationale {
+	padding: 8px 12px 0;
+}
+
+.ochat-patch-rationale {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.4;
+}
+
+.ochat-diff {
+	background: var(--background-primary);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	margin-top: 8px;
+	max-height: 210px;
+	overflow: auto;
+	padding: 5px 0;
+}
+
+.ochat-diff-line {
+	display: grid;
+	grid-template-columns: 24px minmax(max-content, 1fr);
+	line-height: 1.55;
+	min-width: max-content;
+	padding: 0 9px;
+}
+
+.ochat-diff-prefix {
+	user-select: none;
+}
+
+.ochat-diff-text {
+	white-space: pre;
+}
+
+.ochat-diff-line-removed {
+	background: rgba(var(--color-red-rgb), 0.18);
+	color: var(--text-error);
+}
+
+.ochat-diff-line-added {
+	background: rgba(var(--color-green-rgb), 0.16);
+	color: var(--text-success);
+}
+
+.ochat-review > .ochat-actions {
+	border-top: 1px solid var(--ochat-border);
+	justify-content: flex-end;
+	padding: 9px 12px;
+}
+
+.ochat-composer {
+	background: var(--background-primary-alt, var(--background-primary));
+	border: 1px solid var(--ochat-border-hover);
+	border-radius: 5px;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+	display: flex;
+	flex: 0 0 auto;
+	flex-direction: column;
+	margin: 10px 14px;
+	min-height: 104px;
+	padding: 8px;
+	position: relative;
+}
+
+.ochat-composer:focus-within {
+	border-color: var(--ochat-accent);
+	box-shadow: 0 0 0 1px var(--ochat-accent);
+}
+
+.ochat-prompt {
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	font-size: var(--font-ui-small);
+	line-height: 1.45;
+	min-height: 58px;
+	outline: none;
+	padding: 2px 4px 8px;
+	resize: vertical;
+	width: 100%;
+}
+
+.ochat-prompt:focus {
+	box-shadow: none;
+}
+
+.ochat-prompt::placeholder {
+	color: var(--text-faint);
+}
+
+.ochat-mention-suggestions {
+	background: var(--background-primary);
+	border: 1px solid var(--ochat-border-hover);
+	border-radius: 4px;
+	bottom: calc(100% - 8px);
+	box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
+	display: none;
+	flex-direction: column;
+	gap: 2px;
+	left: 0;
+	max-height: 170px;
+	overflow: auto;
+	padding: 4px;
+	position: absolute;
+	right: 0;
+	z-index: 10;
+}
+
+.ochat-mention-suggestions.is-visible {
+	display: flex;
+}
+
+.ochat-composer-footer {
+	align-items: center;
+	display: flex;
+	gap: 7px;
+	justify-content: space-between;
+}
+
+.ochat-composer-controls {
+	flex: 1;
+	flex-wrap: wrap;
+	gap: 4px;
+	min-width: 0;
+}
+
+.ochat-composer-actions {
+	flex: 0 0 auto;
+}
+
+.ochat-model-picker {
+	font-size: var(--font-ui-smaller);
+	height: 28px;
+	max-width: 132px;
+	min-width: 92px;
+}
+
+.ochat-mode-toggle {
+	background: var(--ochat-panel);
+	border: 1px solid var(--ochat-border);
+	border-radius: 4px;
+	display: inline-flex;
+	height: 28px;
+	overflow: hidden;
+}
+
+.ochat-mode-toggle-button {
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	min-width: 40px;
+	padding: 3px 7px;
+}
+
+.ochat-mode-toggle-button:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.ochat-mode-toggle-button.is-active {
+	background: var(--ochat-accent);
+	color: var(--text-on-accent);
+}
+
+.ochat-send-button {
+	background: var(--ochat-accent);
+	color: var(--text-on-accent);
+}
+
+.ochat-send-button:hover {
+	background: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.ochat-status {
+	align-items: center;
+	border-top: 1px solid var(--ochat-border);
+	color: var(--text-muted);
+	display: flex;
+	flex: 0 0 28px;
+	font-family: var(--font-monospace);
+	font-size: 10px;
+	gap: 8px;
+	justify-content: space-between;
+	min-width: 0;
+	padding: 0 12px;
+	position: relative;
+}
+
+.ochat-status-connection {
+	gap: 6px;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ochat-status-icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+}
+
+.ochat-status-icon svg {
+	height: 12px;
+	width: 12px;
+}
+
+.ochat-status-state {
+	flex: 0 0 auto;
+	gap: 6px;
+}
+
+.ochat-status-state.is-ready {
+	color: var(--text-success);
+}
+
+.ochat-status-state.is-error {
+	color: var(--text-error);
+}
+
+.ochat-status-state.is-error .ochat-status-dot {
+	background: var(--color-red);
+}
+
+.ochat-status-state.is-busy {
+	color: var(--text-accent);
+}
+
+.ochat-status-state.is-busy .ochat-status-dot {
+	animation: ochat-pulse 1.25s ease-in-out infinite;
+	background: var(--ochat-accent);
+}
+
+.ochat-status-warning {
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-smaller);
+	left: 0;
+	padding: 6px 12px;
+	position: absolute;
+	right: 0;
+	transform: translateY(calc(-100% - 14px));
+}
+
 .ochat-test-result {
 	border-radius: 4px;
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-smaller);
 	min-height: 24px;
-	padding: 4px 6px;
+	padding: 5px 7px;
 }
 
 .ochat-test-result:empty {
@@ -174,242 +849,37 @@
 	color: var(--text-error);
 }
 
-.ochat-message-user {
-	border-color: var(--interactive-accent);
-}
-
-.ochat-patch {
-	border-top: 1px solid var(--background-modifier-border);
-	margin-top: 10px;
-	padding-top: 10px;
-}
-
-.ochat-patch-rationale {
-	color: var(--text-normal);
-	font-size: var(--font-ui-small);
-	margin-bottom: 8px;
-}
-
-.ochat-patch-original {
-	color: var(--text-error);
-}
-
-.ochat-patch-replacement {
-	color: var(--text-success);
-}
-
-.ochat-context-list {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.ochat-context-file {
-	align-items: center;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	display: flex;
-	gap: 8px;
-	justify-content: space-between;
-	padding: 6px 8px;
-}
-
-.ochat-context-file span {
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.ochat-context-search {
-	width: 100%;
-}
-
-.ochat-context-results {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	max-height: 180px;
-	overflow: auto;
-}
-
-.ochat-context-result {
-	background: transparent;
-	border: 0;
-	box-shadow: none;
-	justify-content: flex-start;
-	overflow: hidden;
-	text-align: left;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	width: 100%;
-}
-
-.ochat-context-strip {
-	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	min-height: 28px;
-}
-
-.ochat-context-chip {
-	align-items: center;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 999px;
-	color: var(--text-muted);
-	display: inline-flex;
-	font-size: var(--font-ui-smaller);
-	gap: 4px;
-	line-height: 1.2;
-	max-width: 100%;
-	min-height: 24px;
-	padding: 3px 8px;
-}
-
-.ochat-context-chip span:first-child,
-.ochat-context-chip-active {
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.ochat-context-chip-active {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
-}
-
-.ochat-context-chip-muted {
-	border-style: dashed;
-}
-
-.ochat-context-chip-removable {
-	cursor: pointer;
-}
-
-.ochat-context-chip-x {
-	align-items: center;
-	display: inline-flex;
-	height: 14px;
-	width: 14px;
-}
-
-.ochat-mention-suggestions {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
-	display: none;
-	flex-direction: column;
-	gap: 2px;
-	max-height: 160px;
-	overflow: auto;
-	padding: 4px;
-}
-
-.ochat-mention-suggestions.is-visible {
-	display: flex;
-}
-
-.ochat-mention-suggestion {
-	background: transparent;
-	border: 0;
-	box-shadow: none;
-	justify-content: flex-start;
-	overflow: hidden;
-	text-align: left;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	width: 100%;
-}
-
-.ochat-composer {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding: 10px;
-}
-
-.ochat-prompt {
-	background: transparent;
-	border: 0;
-	box-shadow: none;
-	font-size: var(--font-ui-medium);
-	min-height: 96px;
-	outline: none;
-	resize: vertical;
-	width: 100%;
-}
-
-.ochat-prompt:focus {
-	box-shadow: none;
-}
-
-.ochat-composer-footer {
-	align-items: center;
-	border-top: 1px solid var(--background-modifier-border);
-	display: flex;
-	gap: 8px;
-	justify-content: space-between;
-	padding-top: 8px;
-}
-
-.ochat-composer-controls,
-.ochat-composer-actions {
-	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
+.ochat-ghost-button {
 	min-width: 0;
 }
 
-.ochat-model-picker {
-	max-width: 170px;
+@media (max-width: 360px) {
+	.ochat-context {
+		padding-inline: 10px;
+	}
+
+	.ochat-message {
+		grid-template-columns: 28px minmax(0, 1fr);
+		padding-inline: 10px;
+	}
+
+	.ochat-composer {
+		margin-inline: 10px;
+	}
+
+	.ochat-model-picker {
+		max-width: 110px;
+	}
+
+	.ochat-mode-toggle-button {
+		min-width: 36px;
+		padding-inline: 5px;
+	}
 }
 
-.ochat-mode-toggle {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	display: inline-flex;
-	overflow: hidden;
-}
-
-.ochat-mode-toggle-button {
-	background: transparent;
-	border: 0;
-	border-radius: 0;
-	box-shadow: none;
-	color: var(--text-muted);
-	font-size: var(--font-ui-smaller);
-	min-width: 44px;
-	padding: 4px 8px;
-}
-
-.ochat-mode-toggle-button.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-}
-
-.ochat-icon-button,
-.ochat-ghost-button,
-.ochat-send-button {
-	min-width: 0;
-}
-
-.ochat-icon-button,
-.ochat-send-button {
-	align-items: center;
-	display: inline-flex;
-	justify-content: center;
-	min-height: 28px;
-	min-width: 28px;
-	padding: 4px;
+@media (prefers-reduced-motion: reduce) {
+	.ochat-thinking-pulse,
+	.ochat-status-state.is-busy .ochat-status-dot {
+		animation: none;
+	}
 }

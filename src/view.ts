@@ -9,6 +9,7 @@ import { resolveSubmitMode } from './modes';
 import { parsePatchProposals } from './patches';
 import type { ChatMessage, ComposerMode, PatchProposal } from './types';
 import type { SubmitMode } from './modes';
+import { getEndpointLabel, getProviderLabel, getViewStatusKind } from './view-data';
 
 export class OChatView extends ItemView {
 	private readonly plugin: OChatPlugin;
@@ -21,6 +22,8 @@ export class OChatView extends ItemView {
 	private contextStripEl: HTMLElement | null = null;
 	private mentionSuggestionsEl: HTMLElement | null = null;
 	private testResultEl: HTMLElement | null = null;
+	private messageTimes: number[] = [];
+	private statusMessage = 'Ready';
 	private isAwaitingResponse = false;
 	private onboardingProbeStarted = false;
 	private contextOpen = false;
@@ -60,6 +63,7 @@ export class OChatView extends ItemView {
 
 	clearConversation(): void {
 		this.history = [];
+		this.messageTimes = [];
 		this.pendingPatches = [];
 		this.render();
 	}
@@ -69,14 +73,7 @@ export class OChatView extends ItemView {
 	}
 
 	async editActiveNote(): Promise<void> {
-		await this.submitPrompt(
-			[
-				'Review the active Markdown note and propose useful edits.',
-				'Return only JSON in this exact shape:',
-				'{"patches":[{"path":"path/to/note.md","original":"exact text","replacement":"new text","rationale":"why"}]}'
-			].join(' '),
-			'edit'
-		);
+		await this.submitPrompt('Review the active note and propose useful edits.', 'edit');
 	}
 
 	private render(): void {
@@ -84,23 +81,23 @@ export class OChatView extends ItemView {
 		contentEl.empty();
 		contentEl.addClass('ochat-view');
 
+		this.renderHeader(contentEl);
+
+		this.contextStripEl = contentEl.createDiv({ cls: 'ochat-context' });
+		this.renderContextStrip();
+
+		this.setupEl = contentEl.createDiv({ cls: 'ochat-setup' });
+		this.renderComposerSetup();
+
 		this.transcriptEl = contentEl.createDiv({ cls: 'ochat-transcript' });
 		this.renderTranscript();
 
 		const composer = contentEl.createDiv({ cls: 'ochat-composer' });
-		this.statusEl = composer.createDiv({ cls: 'ochat-status' });
-		this.renderEndpointStatus();
-
-		this.setupEl = composer.createDiv({ cls: 'ochat-setup' });
-		this.renderComposerSetup();
-
-		this.contextStripEl = composer.createDiv({ cls: 'ochat-context-strip' });
-		this.renderContextStrip();
-
 		this.promptEl = composer.createEl('textarea', {
 			cls: 'ochat-prompt',
 			attr: {
-				placeholder: 'Ask about this note, or type @ to attach more context'
+				placeholder: 'Ask about your notes…',
+				'aria-label': 'Ask a question'
 			}
 		});
 		this.promptEl.addEventListener('keydown', (event) => {
@@ -125,7 +122,16 @@ export class OChatView extends ItemView {
 
 		const footer = composer.createDiv({ cls: 'ochat-composer-footer' });
 		const controls = footer.createDiv({ cls: 'ochat-composer-controls' });
-		this.createIconButton(controls, 'plus', 'Add context files', () => {
+		this.createIconButton(controls, 'at-sign', 'Mention a note', () => {
+			if (this.promptEl) {
+				const start = this.promptEl.selectionStart;
+				const end = this.promptEl.selectionEnd;
+				this.promptEl.setRangeText('@', start, end, 'end');
+				this.promptEl.focus();
+				this.renderMentionSuggestions();
+			}
+		});
+		this.createIconButton(controls, 'paperclip', 'Attach context files', () => {
 			this.contextOpen = toggleToolsPanel(this.contextOpen);
 			this.settingsOpen = false;
 			this.renderComposerSetup();
@@ -136,17 +142,34 @@ export class OChatView extends ItemView {
 		});
 
 		const actions = footer.createDiv({ cls: 'ochat-composer-actions' });
+		this.createIconButton(actions, 'send', 'Send', () => {
+			void this.submitFromComposer();
+		}, 'ochat-send-button mod-cta');
+
+		this.statusEl = contentEl.createDiv({ cls: 'ochat-status' });
+		this.renderEndpointStatus();
+	}
+
+	private renderHeader(containerEl: HTMLElement): void {
+		const header = containerEl.createDiv({ cls: 'ochat-header' });
+		const brand = header.createDiv({ cls: 'ochat-brand' });
+		brand.createSpan({ cls: 'ochat-brand-name', text: 'OChat' });
+		brand.createSpan({ cls: 'ochat-connection-dot', attr: { 'aria-label': 'Local model connection' } });
+
+		const actions = header.createDiv({ cls: 'ochat-header-actions' });
+		this.createIconButton(actions, 'square-pen', 'New chat', () => {
+			this.clearConversation();
+		});
+		this.createIconButton(actions, 'files', 'Attach context', () => {
+			this.contextOpen = toggleToolsPanel(this.contextOpen);
+			this.settingsOpen = false;
+			this.renderComposerSetup();
+		});
 		this.createIconButton(actions, 'settings', 'Settings', () => {
 			this.settingsOpen = !this.settingsOpen;
 			this.contextOpen = false;
 			this.renderComposerSetup();
 		});
-		this.createIconButton(actions, 'trash-2', 'Clear conversation', () => {
-			this.clearConversation();
-		});
-		this.createIconButton(actions, 'send', 'Send', () => {
-			void this.submitFromComposer();
-		}, 'ochat-send-button mod-cta');
 	}
 
 	private createIconButton(
@@ -176,27 +199,60 @@ export class OChatView extends ItemView {
 		this.transcriptEl.empty();
 
 		if (this.history.length === 0 && this.pendingPatches.length === 0) {
-			this.transcriptEl.createDiv({
-				cls: 'ochat-empty',
-				text: 'Ask a question, summarize the active note, or request Markdown edits.'
+			const empty = this.transcriptEl.createDiv({ cls: 'ochat-empty' });
+			const icon = empty.createDiv({ cls: 'ochat-empty-icon' });
+			setIcon(icon, 'bot');
+			empty.createDiv({ cls: 'ochat-empty-title', text: 'Ask OChat' });
+			empty.createDiv({
+				cls: 'ochat-empty-copy',
+				text: 'Use the active note, selected text, and attached files to answer questions or prepare safe Markdown edits.'
+			});
+			const suggestions = empty.createDiv({ cls: 'ochat-empty-actions' });
+			suggestions.createEl('button', { text: 'Summarize active note' }, (button) => {
+				button.addEventListener('click', () => {
+					void this.askActiveNote();
+				});
+			});
+			suggestions.createEl('button', { text: 'Suggest edits' }, (button) => {
+				button.addEventListener('click', () => {
+					void this.editActiveNote();
+				});
 			});
 			return;
 		}
 
-		for (const message of this.history) {
+		for (const [index, message] of this.history.entries()) {
 			const messageEl = this.transcriptEl.createDiv({
 				cls: `ochat-message ochat-message-${message.role}`
 			});
-			messageEl.createDiv({ cls: 'ochat-message-role', text: message.role });
-			this.renderMessageContent(messageEl, message);
+			const avatar = messageEl.createDiv({ cls: 'ochat-message-avatar' });
+			setIcon(avatar, message.role === 'assistant' ? 'bot' : 'user-round');
+			const body = messageEl.createDiv({ cls: 'ochat-message-body' });
+			const header = body.createDiv({ cls: 'ochat-message-header' });
+			header.createSpan({
+				cls: 'ochat-message-role',
+				text: message.role === 'assistant' ? 'OChat' : 'You'
+			});
+			header.createEl('time', {
+				cls: 'ochat-message-time',
+				text: this.formatMessageTime(this.messageTimes[index])
+			});
+			this.renderMessageContent(body, message);
 		}
 
 		if (this.isAwaitingResponse) {
 			const thinkingEl = this.transcriptEl.createDiv({
 				cls: 'ochat-message ochat-message-assistant ochat-message-thinking'
 			});
-			thinkingEl.createDiv({ cls: 'ochat-message-role', text: 'assistant' });
-			thinkingEl.createDiv({ cls: 'ochat-thinking-live', text: 'thinking...' });
+			const avatar = thinkingEl.createDiv({ cls: 'ochat-message-avatar' });
+			setIcon(avatar, 'bot');
+			const body = thinkingEl.createDiv({ cls: 'ochat-message-body' });
+			const header = body.createDiv({ cls: 'ochat-message-header' });
+			header.createSpan({ cls: 'ochat-message-role', text: 'OChat' });
+			header.createEl('time', { cls: 'ochat-message-time', text: this.formatMessageTime(Date.now()) });
+			const live = body.createDiv({ cls: 'ochat-thinking-live' });
+			live.createSpan({ cls: 'ochat-thinking-pulse' });
+			live.createSpan({ text: 'Thinking…' });
 		}
 
 		if (this.pendingPatches.length > 0) {
@@ -238,34 +294,62 @@ export class OChatView extends ItemView {
 		}
 
 		this.contextStripEl.empty();
+		const heading = this.contextStripEl.createDiv({ cls: 'ochat-context-heading' });
+		heading.createSpan({ text: 'Context' });
+		if (this.plugin.settings.maxVaultResults > 0) {
+			heading.createSpan({ cls: 'ochat-context-search-status', text: 'Vault search on' });
+		}
+
+		const card = this.contextStripEl.createDiv({ cls: 'ochat-context-card' });
 		const activePath = this.plugin.getActiveMarkdownPath();
 
 		if (activePath) {
-			this.contextStripEl.createSpan({
-				cls: 'ochat-context-chip ochat-context-chip-active',
-				text: `Active: ${activePath}`
-			});
+			const row = card.createDiv({ cls: 'ochat-context-row ochat-context-row-active' });
+			const icon = row.createSpan({ cls: 'ochat-context-icon' });
+			setIcon(icon, 'file-text');
+			row.createSpan({ cls: 'ochat-context-path', text: activePath });
+			const status = row.createSpan({ cls: 'ochat-context-active-status' });
+			status.createSpan({ text: 'Active' });
+			status.createSpan({ cls: 'ochat-context-active-dot' });
+		} else {
+			const row = card.createDiv({ cls: 'ochat-context-row ochat-context-row-empty' });
+			const icon = row.createSpan({ cls: 'ochat-context-icon' });
+			setIcon(icon, 'file-x');
+			row.createSpan({ cls: 'ochat-context-path', text: 'No active Markdown note' });
 		}
 
 		for (const path of this.getAttachedContextPaths()) {
-			const chip = this.contextStripEl.createEl('button', {
-				cls: 'ochat-context-chip ochat-context-chip-removable',
-				attr: { title: `Remove ${path}` }
+			const row = card.createDiv({ cls: 'ochat-context-row' });
+			const icon = row.createSpan({ cls: 'ochat-context-icon' });
+			setIcon(icon, 'file-text');
+			row.createSpan({ cls: 'ochat-context-path', text: path });
+			const close = row.createEl('button', {
+				cls: 'ochat-context-remove ochat-icon-button',
+				attr: { title: `Remove ${path}`, 'aria-label': `Remove ${path}` }
 			});
-			chip.createSpan({ text: `@${path}` });
-			const close = chip.createSpan({ cls: 'ochat-context-chip-x' });
 			setIcon(close, 'x');
-			chip.addEventListener('click', () => {
+			close.addEventListener('click', () => {
 				this.removeContextFile(path);
 			});
 		}
 
-		if (this.plugin.settings.maxVaultResults > 0) {
-			this.contextStripEl.createSpan({
-				cls: 'ochat-context-chip ochat-context-chip-muted',
-				text: 'Vault search'
-			});
-		}
+		const add = card.createEl('button', {
+			cls: 'ochat-context-add',
+			attr: { title: 'Attach context files' }
+		});
+		const addIcon = add.createSpan({ cls: 'ochat-context-icon' });
+		setIcon(addIcon, 'plus');
+		add.createSpan({ cls: 'ochat-context-path', text: 'Add context…' });
+		add.createSpan({ cls: 'ochat-keycap', text: '@' });
+		add.addEventListener('click', () => {
+			this.contextOpen = true;
+			this.settingsOpen = false;
+			this.renderComposerSetup();
+		});
+	}
+
+	private formatMessageTime(timestamp = Date.now()): string {
+		return new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 	}
 
 	private renderSettingsPanel(containerEl: HTMLElement): void {
@@ -551,26 +635,48 @@ export class OChatView extends ItemView {
 		}
 
 		const reviewEl = this.transcriptEl.createDiv({ cls: 'ochat-review' });
-		reviewEl.createDiv({ cls: 'ochat-review-title', text: 'Pending Markdown edits' });
+		const reviewHeader = reviewEl.createDiv({ cls: 'ochat-review-header' });
+		const reviewIcon = reviewHeader.createSpan({ cls: 'ochat-review-icon' });
+		setIcon(reviewIcon, 'square-pen');
+		const reviewHeading = reviewHeader.createDiv({ cls: 'ochat-review-heading' });
+		reviewHeading.createDiv({
+			cls: 'ochat-review-title',
+			text: `${patches.length} pending edit${patches.length === 1 ? '' : 's'}`
+		});
+		reviewHeading.createDiv({
+			cls: 'ochat-review-subtitle',
+			text: patches.length === 1 ? patches[0].path : `${patches.length} Markdown files`
+		});
 
 		for (const patch of patches) {
 			const patchEl = reviewEl.createDiv({ cls: 'ochat-patch' });
-			patchEl.createDiv({ cls: 'ochat-patch-path', text: patch.path });
+			if (patches.length > 1) {
+				patchEl.createDiv({ cls: 'ochat-patch-path', text: patch.path });
+			}
 			patchEl.createDiv({ cls: 'ochat-patch-rationale', text: patch.rationale });
-			patchEl.createEl('pre', { cls: 'ochat-patch-original', text: patch.original });
-			patchEl.createEl('pre', { cls: 'ochat-patch-replacement', text: patch.replacement });
+			const diff = patchEl.createDiv({ cls: 'ochat-diff', attr: { 'aria-label': `Proposed changes for ${patch.path}` } });
+			for (const line of patch.original.split('\n')) {
+				const row = diff.createDiv({ cls: 'ochat-diff-line ochat-diff-line-removed' });
+				row.createSpan({ cls: 'ochat-diff-prefix', text: '−' });
+				row.createSpan({ cls: 'ochat-diff-text', text: line || ' ' });
+			}
+			for (const line of patch.replacement.split('\n')) {
+				const row = diff.createDiv({ cls: 'ochat-diff-line ochat-diff-line-added' });
+				row.createSpan({ cls: 'ochat-diff-prefix', text: '+' });
+				row.createSpan({ cls: 'ochat-diff-text', text: line || ' ' });
+			}
 		}
 
 		const actions = reviewEl.createDiv({ cls: 'ochat-actions' });
-		actions.createEl('button', { text: 'Apply edits', cls: 'mod-cta' }, (button) => {
-			button.addEventListener('click', () => {
-				void this.applyPendingPatches();
-			});
-		});
 		actions.createEl('button', { text: 'Discard' }, (button) => {
 			button.addEventListener('click', () => {
 				this.pendingPatches = [];
 				this.renderTranscript();
+			});
+		});
+		actions.createEl('button', { text: 'Apply', cls: 'mod-cta' }, (button) => {
+			button.addEventListener('click', () => {
+				void this.applyPendingPatches();
 			});
 		});
 	}
@@ -582,11 +688,20 @@ export class OChatView extends ItemView {
 
 		this.statusEl.empty();
 		const endpoint = this.plugin.getEndpointClassification();
-		this.statusEl.setText(`${this.plugin.settings.provider} - ${this.plugin.settings.baseUrl}`);
+		const connection = this.statusEl.createDiv({ cls: 'ochat-status-connection' });
+		const connectionIcon = connection.createSpan({ cls: 'ochat-status-icon' });
+		setIcon(connectionIcon, 'plug');
+		connection.createSpan({
+			text: `${getProviderLabel(this.plugin.settings.provider)} · ${getEndpointLabel(this.plugin.settings.baseUrl)}`
+		});
+
+		const state = this.statusEl.createDiv({ cls: `ochat-status-state ${getViewStatusKind(this.statusMessage)}` });
+		state.createSpan({ cls: 'ochat-status-dot' });
+		state.createSpan({ text: this.statusMessage });
 
 		if (endpoint.requiresAcknowledgement) {
 			this.statusEl.createDiv({
-				cls: 'ochat-warning',
+				cls: 'ochat-status-warning',
 				text: endpoint.reason
 			});
 		}
@@ -619,6 +734,7 @@ export class OChatView extends ItemView {
 			const messages = await this.plugin.buildMessages(requestPrompt, this.history, this.contextFilePaths);
 
 			this.history.push({ role: 'user', content: prompt });
+			this.messageTimes.push(Date.now());
 			this.isAwaitingResponse = true;
 			this.renderTranscript();
 			this.setStatus('Waiting for model...');
@@ -630,6 +746,7 @@ export class OChatView extends ItemView {
 				await this.handleEditAnswer(answer);
 			} else {
 				this.history.push({ role: 'assistant', ...parseAssistantResponse(answer) });
+				this.messageTimes.push(Date.now());
 			}
 
 			this.setStatus('Ready.');
@@ -649,6 +766,7 @@ export class OChatView extends ItemView {
 
 		if (patches.length === 0) {
 			this.history.push({ role: 'assistant', ...parsed });
+			this.messageTimes.push(Date.now());
 			new Notice('The model did not return valid patch JSON.');
 			return;
 		}
@@ -660,6 +778,7 @@ export class OChatView extends ItemView {
 				content: `Prepared ${patches.length} Markdown edit${patches.length === 1 ? '' : 's'} for review.`,
 				thinking: parsed.thinking
 			});
+			this.messageTimes.push(Date.now());
 			return;
 		}
 
@@ -668,6 +787,7 @@ export class OChatView extends ItemView {
 			role: 'assistant',
 			content: results.map((result) => JSON.stringify(result)).join('\n')
 		});
+		this.messageTimes.push(Date.now());
 	}
 
 	private async applyPendingPatches(): Promise<void> {
@@ -682,6 +802,7 @@ export class OChatView extends ItemView {
 				role: 'assistant',
 				content: results.map((result) => JSON.stringify(result)).join('\n')
 			});
+			this.messageTimes.push(Date.now());
 			this.renderTranscript();
 			new Notice('Applied reviewed edits.');
 		} catch (error) {
@@ -746,7 +867,8 @@ export class OChatView extends ItemView {
 	}
 
 	private setStatus(message: string): void {
-		this.statusEl?.setText(message);
+		this.statusMessage = message;
+		this.renderEndpointStatus();
 	}
 
 	private setTestResult(message: string, kind: 'pending' | 'success' | 'warning' | 'error'): void {
