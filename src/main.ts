@@ -135,6 +135,19 @@ export default class OChatPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
+	/**
+	 * Discovers models without completing first-run setup, so the setup panel
+	 * can show what was found and let the user confirm a model before the pane
+	 * switches to chat.
+	 */
+	async discoverAvailableModels(): Promise<string[]> {
+		const models = await this.listModels();
+		this.settings = applyModelDiscovery(this.settings, models);
+		this.settings.setupComplete = false;
+		await this.saveSettings();
+		return models;
+	}
+
 	async refreshAvailableModels(): Promise<string[]> {
 		const models = await this.listModels();
 		this.settings = applyModelDiscovery(this.settings, models);
