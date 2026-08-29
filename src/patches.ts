@@ -41,6 +41,19 @@ export function validatePatchProposal(
 	return { ok: true };
 }
 
+/**
+ * Swaps the two halves of a patch so an applied edit can be walked back
+ * through the same validation path that applied it.
+ */
+export function invertPatchProposal(patch: PatchProposal): PatchProposal {
+	return {
+		path: patch.path,
+		original: patch.replacement,
+		replacement: patch.original,
+		rationale: `Undo: ${patch.rationale}`
+	};
+}
+
 export function applyPatchToContent(patch: PatchProposal, currentContent: string): string {
 	const validation = validatePatchProposal(patch, currentContent);
 

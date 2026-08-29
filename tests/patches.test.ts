@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
 	applyPatchToContent,
+	invertPatchProposal,
 	parsePatchProposals,
 	validatePatchProposal
 } from '../src/patches';
@@ -57,5 +58,23 @@ describe('patch proposals', () => {
 			ok: false,
 			reason: 'Original text matched more than once.'
 		});
+	});
+
+	test('inverts a patch so an applied edit can be walked back', () => {
+		const patch = {
+			path: 'Note.md',
+			original: 'old text',
+			replacement: 'new text',
+			rationale: 'clearer wording'
+		};
+		const inverted = invertPatchProposal(patch);
+
+		expect(inverted).toEqual({
+			path: 'Note.md',
+			original: 'new text',
+			replacement: 'old text',
+			rationale: 'Undo: clearer wording'
+		});
+		expect(applyPatchToContent(inverted, applyPatchToContent(patch, 'a old text b'))).toBe('a old text b');
 	});
 });

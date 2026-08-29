@@ -11,11 +11,13 @@ Current release: `0.1.0`.
 - Ollama provider using `POST /api/chat` and `GET /api/tags`.
 - OpenAI-compatible provider using `/v1/chat/completions` and `/v1/models`.
 - Active note, selected text, explicit `@note` attachments, and ranked Markdown vault snippets in context.
-- Compact assistant composer with context chips, `@` note suggestions, Ask/Edit toggle, and icon controls.
+- Compact composer with context chips, `@` note suggestions, an Ask/Edit toggle, and a model picker that shows connection state.
+- New chat and connection settings in the pane header; settings and file attachment open as a sheet above the composer, so the input never moves.
 - Rendered Markdown chat responses using Obsidian's Markdown renderer.
-- Collapsed model thinking blocks for models that emit `<think>...</think>`, plus a live `thinking...` indicator while a request is running.
-- Endpoint testing in the sidebar settings panel with visible success, warning, and failure states.
-- Markdown edit proposals with review mode enabled by default.
+- Collapsed model thinking blocks for models that emit `<think>...</think>`, plus a live thinking indicator and a Stop button while a request is running.
+- Copy, retry, and insert-into-note actions on each answer.
+- Endpoint testing in the sidebar settings sheet with visible success, warning, and failure states.
+- Markdown edit proposals with review mode enabled by default, shown as a line diff with per-patch Apply and Skip, and Undo after an edit is written.
 - Markdown-only file writes through Obsidian APIs.
 
 ## Privacy and network use
@@ -100,7 +102,9 @@ Until OChat is approved in the Obsidian Community directory, install it manually
 
 When you ask OChat to edit notes, the model must return structured patch JSON with `path`, `original`, `replacement`, and `rationale`. OChat validates that each target is a Markdown file and that the original text appears exactly once before applying a replacement.
 
-Review mode is on by default. With review mode enabled, proposed edits are shown in the OChat sidebar and require approval. If you turn review mode off, valid Markdown patches are applied automatically.
+Review mode is on by default. With review mode enabled, proposed edits are shown in the OChat sidebar as a line diff and require approval. You can apply or skip each patch on its own, or apply them all at once. After edits are written, Undo reverses them through the same validation, so an undo only succeeds while the replaced text is still an exact single match.
+
+If you turn review mode off, valid Markdown patches are applied automatically.
 
 ## License
 

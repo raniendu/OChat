@@ -24,6 +24,11 @@ import type {
 } from './types';
 import { OChatView } from './view';
 
+export interface BuiltPrompt {
+	messages: ChatMessage[];
+	vaultSnippetCount: number;
+}
+
 export default class OChatPlugin extends Plugin {
 	settings: OChatSettings = DEFAULT_SETTINGS;
 
@@ -135,6 +140,19 @@ export default class OChatPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
+	/**
+	 * Discovers models without completing first-run setup, so the setup card
+	 * can show what was found and let the user confirm a model before the pane
+	 * switches to chat.
+	 */
+	async discoverAvailableModels(): Promise<string[]> {
+		const models = await this.listModels();
+		this.settings = applyModelDiscovery(this.settings, models);
+		this.settings.setupComplete = false;
+		await this.saveSettings();
+		return models;
+	}
+
 	async refreshAvailableModels(): Promise<string[]> {
 		const models = await this.listModels();
 		this.settings = applyModelDiscovery(this.settings, models);
@@ -142,7 +160,11 @@ export default class OChatPlugin extends Plugin {
 		return models;
 	}
 
-	async buildMessages(prompt: string, history: ChatMessage[], contextFilePaths: string[] = []): Promise<ChatMessage[]> {
+	async buildMessages(
+		prompt: string,
+		history: ChatMessage[],
+		contextFilePaths: string[] = []
+	): Promise<BuiltPrompt> {
 		const activeNote = await this.getActiveNoteSource();
 		const selectedText = this.app.workspace.activeEditor?.editor?.getSelection() ?? '';
 		const mentionedContextPaths = this.resolvePromptContextPaths(prompt);
@@ -164,7 +186,10 @@ export default class OChatPlugin extends Plugin {
 			maxContextCharacters: this.settings.maxContextCharacters
 		});
 
-		return [bundle.messages[0], ...history.slice(-8), buildUserMessage(prompt, bundle.contextText)];
+		return {
+			messages: [bundle.messages[0], ...history.slice(-8), buildUserMessage(prompt, bundle.contextText)],
+			vaultSnippetCount: vaultSnippets.length
+		};
 	}
 
 	async chat(messages: ChatMessage[]): Promise<string> {
