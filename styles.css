@@ -72,8 +72,8 @@
 	display: inline-flex;
 	height: 28px;
 	justify-content: center;
-	min-height: 28px;
-	min-width: 28px;
+	min-height: var(--input-height);
+	min-width: var(--input-height);
 	padding: 4px;
 	width: 28px;
 }
@@ -124,7 +124,7 @@
 .ochat-context-card {
 	background: var(--ochat-panel);
 	border: 1px solid var(--ochat-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	overflow: hidden;
 }
 
@@ -167,12 +167,13 @@
 }
 
 .ochat-context-path {
+	align-items: baseline;
+	display: flex;
 	flex: 1;
 	font-size: var(--font-ui-small);
 	min-width: 0;
 	overflow: hidden;
 	text-align: left;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
@@ -200,7 +201,7 @@
 
 .ochat-keycap {
 	border: 1px solid var(--ochat-border-hover);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	color: var(--text-faint);
 	font-family: var(--font-monospace);
 	font-size: 10px;
@@ -289,7 +290,7 @@
 	align-items: center;
 	background: var(--background-primary);
 	border: 1px solid var(--ochat-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	display: flex;
 	gap: 8px;
 	justify-content: space-between;
@@ -312,7 +313,7 @@
 .ochat-mention-suggestion {
 	background: transparent;
 	border: 0;
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	box-shadow: none;
 	justify-content: flex-start;
 	overflow: hidden;
@@ -476,7 +477,7 @@
 .ochat-markdown code {
 	background: var(--background-modifier-hover);
 	border: 1px solid var(--ochat-border);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	font-size: 0.9em;
 	padding: 1px 4px;
 }
@@ -497,7 +498,7 @@
 .ochat-thinking pre {
 	background: var(--ochat-panel);
 	border: 1px solid var(--ochat-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	font-size: var(--font-ui-smaller);
 	margin: 7px 0;
 	max-width: 100%;
@@ -532,8 +533,8 @@
 .ochat-review {
 	background: var(--ochat-panel);
 	border: 1px solid var(--ochat-border-hover);
-	border-radius: 5px;
-	box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
 	margin: 14px;
 	overflow: hidden;
 }
@@ -627,8 +628,8 @@
 .ochat-composer {
 	background: var(--background-primary-alt, var(--background-primary));
 	border: 1px solid var(--ochat-border-hover);
-	border-radius: 5px;
-	box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
 	display: flex;
 	flex: 0 0 auto;
 	flex-direction: column;
@@ -667,9 +668,9 @@
 .ochat-mention-suggestions {
 	background: var(--background-primary);
 	border: 1px solid var(--ochat-border-hover);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	bottom: calc(100% - 8px);
-	box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
+	box-shadow: var(--shadow-l);
 	display: none;
 	flex-direction: column;
 	gap: 2px;
@@ -714,7 +715,7 @@
 .ochat-mode-toggle {
 	background: var(--ochat-panel);
 	border: 1px solid var(--ochat-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	display: inline-flex;
 	height: 28px;
 	overflow: hidden;
@@ -823,7 +824,7 @@
 }
 
 .ochat-test-result {
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	font-size: var(--font-ui-smaller);
 	min-height: 24px;
 	padding: 5px 7px;
@@ -882,4 +883,112 @@
 	.ochat-status-state.is-busy .ochat-status-dot {
 		animation: none;
 	}
+}
+
+/* Applied edits ---------------------------------------------------------- */
+
+.ochat-applied {
+	align-items: center;
+	color: var(--text-muted);
+	display: flex;
+	flex-wrap: wrap;
+	font-size: var(--font-ui-smaller);
+	gap: var(--size-2-2);
+	min-width: 0;
+}
+
+.ochat-applied-icon {
+	align-items: center;
+	color: var(--text-success);
+	display: flex;
+}
+
+.ochat-applied-icon .svg-icon {
+	height: var(--icon-xs);
+	width: var(--icon-xs);
+}
+
+.ochat-applied-label {
+	white-space: nowrap;
+}
+
+.ochat-applied-separator {
+	color: var(--text-faint);
+}
+
+.ochat-applied-link {
+	color: var(--text-accent);
+	cursor: var(--cursor-link);
+	display: flex;
+	min-width: 0;
+}
+
+.ochat-applied-link:hover {
+	text-decoration: underline;
+}
+
+.ochat-undo-button {
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	height: auto;
+	margin-left: auto;
+	padding: var(--size-2-1) var(--size-2-3);
+}
+
+.ochat-undo-button:hover {
+	background: var(--background-modifier-hover);
+	box-shadow: none;
+	color: var(--text-normal);
+}
+
+/* Paths ------------------------------------------------------------------ */
+
+.ochat-path-label {
+	align-items: baseline;
+	display: flex;
+	min-width: 0;
+}
+
+/* The folder gives up its characters first so the file name survives. */
+.ochat-path-folder {
+	color: var(--text-faint);
+	flex: 0 100 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ochat-path-name {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Stop ------------------------------------------------------------------- */
+
+.ochat-stop-button {
+	align-items: center;
+	background: var(--background-secondary);
+	border: var(--border-width) solid var(--background-modifier-border);
+	color: var(--text-normal);
+	display: inline-flex;
+	justify-content: center;
+	min-height: var(--input-height);
+	min-width: var(--input-height);
+}
+
+.ochat-stop-button .svg-icon {
+	fill: currentColor;
+	height: var(--icon-s);
+	width: var(--icon-s);
+}
+
+/* Unchanged lines shown for context around a change. */
+.ochat-diff-line-context {
+	color: var(--text-faint);
 }

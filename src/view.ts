@@ -6,7 +6,9 @@ import { shouldSubmitPromptKey } from './keyboard';
 import { getModelSelectOptions } from './model-options';
 import type OChatPlugin from './main';
 import { resolveSubmitMode } from './modes';
-import { parsePatchProposals } from './patches';
+import { buildUnifiedDiff } from './diff';
+import { invertPatchProposal, parsePatchProposals } from './patches';
+import { splitPathLabel } from './path-label';
 import type { ChatMessage, ComposerMode, PatchProposal } from './types';
 import type { SubmitMode } from './modes';
 import { getEndpointLabel, getProviderLabel, getViewStatusKind } from './view-data';
@@ -23,6 +25,9 @@ export class OChatView extends ItemView {
 	private mentionSuggestionsEl: HTMLElement | null = null;
 	private testResultEl: HTMLElement | null = null;
 	private messageTimes: number[] = [];
+	private composerActionsEl: HTMLElement | null = null;
+	private appliedEdits = new Map<number, { patches: PatchProposal[]; undone: boolean }>();
+	private requestToken = 0;
 	private statusMessage = 'Ready';
 	private isAwaitingResponse = false;
 	private onboardingProbeStarted = false;
@@ -59,12 +64,16 @@ export class OChatView extends ItemView {
 
 	async onClose(): Promise<void> {
 		this.pendingPatches = [];
+		this.requestToken++;
 	}
 
 	clearConversation(): void {
 		this.history = [];
 		this.messageTimes = [];
 		this.pendingPatches = [];
+		this.appliedEdits.clear();
+		this.requestToken++;
+		this.isAwaitingResponse = false;
 		this.render();
 	}
 
@@ -141,13 +150,72 @@ export class OChatView extends ItemView {
 			await this.plugin.selectComposerMode(mode);
 		});
 
-		const actions = footer.createDiv({ cls: 'ochat-composer-actions' });
-		this.createIconButton(actions, 'send', 'Send', () => {
-			void this.submitFromComposer();
-		}, 'ochat-send-button mod-cta');
+		this.composerActionsEl = footer.createDiv({ cls: 'ochat-composer-actions' });
+		this.renderComposerAction();
 
 		this.statusEl = contentEl.createDiv({ cls: 'ochat-status' });
 		this.renderEndpointStatus();
+	}
+
+	private renderComposerAction(): void {
+		if (!this.composerActionsEl) {
+			return;
+		}
+
+		this.composerActionsEl.empty();
+
+		if (this.isAwaitingResponse) {
+			this.createIconButton(
+				this.composerActionsEl,
+				'square',
+				'Stop',
+				() => {
+					this.stopRequest();
+				},
+				'ochat-stop-button'
+			);
+			return;
+		}
+
+		this.createIconButton(
+			this.composerActionsEl,
+			'send',
+			'Send',
+			() => {
+				void this.submitFromComposer();
+			},
+			'ochat-send-button mod-cta'
+		);
+	}
+
+	/**
+	 * Obsidian's requestUrl takes no abort signal, so Stop cannot cancel the
+	 * network call. It releases the composer and discards whatever comes back
+	 * for a superseded token.
+	 */
+	private stopRequest(): void {
+		if (!this.isAwaitingResponse) {
+			return;
+		}
+
+		this.requestToken++;
+		this.isAwaitingResponse = false;
+		this.setStatus('Stopped.');
+		this.renderComposerAction();
+		this.renderTranscript();
+	}
+
+	/** Renders a vault path with the folder dimmed so it truncates first. */
+	private renderPathLabel(containerEl: HTMLElement, path: string, cls = 'ochat-context-path'): HTMLElement {
+		const label = containerEl.createSpan({ cls, attr: { title: path } });
+		const parts = splitPathLabel(path);
+
+		if (parts.folder) {
+			label.createSpan({ cls: 'ochat-path-folder', text: parts.folder });
+		}
+
+		label.createSpan({ cls: 'ochat-path-name', text: parts.name });
+		return label;
 	}
 
 	private renderHeader(containerEl: HTMLElement): void {
@@ -237,7 +305,13 @@ export class OChatView extends ItemView {
 				cls: 'ochat-message-time',
 				text: this.formatMessageTime(this.messageTimes[index])
 			});
-			this.renderMessageContent(body, message);
+			const applied = this.appliedEdits.get(index);
+
+			if (applied) {
+				this.renderAppliedEdits(body, applied);
+			} else {
+				this.renderMessageContent(body, message);
+			}
 		}
 
 		if (this.isAwaitingResponse) {
@@ -258,6 +332,48 @@ export class OChatView extends ItemView {
 		if (this.pendingPatches.length > 0) {
 			this.renderPatchReview(this.pendingPatches);
 		}
+	}
+
+	private renderAppliedEdits(
+		containerEl: HTMLElement,
+		record: { patches: PatchProposal[]; undone: boolean }
+	): void {
+		const row = containerEl.createDiv({ cls: 'ochat-applied' });
+		const icon = row.createSpan({ cls: 'ochat-applied-icon' });
+		setIcon(icon, record.undone ? 'undo-2' : 'check');
+
+		const count = record.patches.length;
+		row.createSpan({
+			cls: 'ochat-applied-label',
+			text: record.undone
+				? `Reverted ${count} edit${count === 1 ? '' : 's'}`
+				: `Applied ${count} edit${count === 1 ? '' : 's'}`
+		});
+
+		const paths = [...new Set(record.patches.map((patch) => patch.path))];
+		row.createSpan({ cls: 'ochat-applied-separator', text: '·' });
+
+		if (paths.length === 1) {
+			const link = this.renderPathLabel(row, paths[0], 'ochat-applied-link');
+			link.addEventListener('click', () => {
+				void this.app.workspace.openLinkText(paths[0], '', false);
+			});
+		} else {
+			row.createSpan({ cls: 'ochat-applied-link', text: `${paths.length} files` });
+		}
+
+		if (record.undone) {
+			return;
+		}
+
+		const undo = row.createEl('button', {
+			cls: 'ochat-undo-button',
+			text: 'Undo',
+			attr: { type: 'button' }
+		});
+		undo.addEventListener('click', () => {
+			void this.undoApplied(record);
+		});
 	}
 
 	private renderComposerSetup(): void {
@@ -307,7 +423,7 @@ export class OChatView extends ItemView {
 			const row = card.createDiv({ cls: 'ochat-context-row ochat-context-row-active' });
 			const icon = row.createSpan({ cls: 'ochat-context-icon' });
 			setIcon(icon, 'file-text');
-			row.createSpan({ cls: 'ochat-context-path', text: activePath });
+			this.renderPathLabel(row, activePath);
 			const status = row.createSpan({ cls: 'ochat-context-active-status' });
 			status.createSpan({ text: 'Active' });
 			status.createSpan({ cls: 'ochat-context-active-dot' });
@@ -322,7 +438,7 @@ export class OChatView extends ItemView {
 			const row = card.createDiv({ cls: 'ochat-context-row' });
 			const icon = row.createSpan({ cls: 'ochat-context-icon' });
 			setIcon(icon, 'file-text');
-			row.createSpan({ cls: 'ochat-context-path', text: path });
+			this.renderPathLabel(row, path);
 			const close = row.createEl('button', {
 				cls: 'ochat-context-remove ochat-icon-button',
 				attr: { title: `Remove ${path}`, 'aria-label': `Remove ${path}` }
@@ -525,12 +641,12 @@ export class OChatView extends ItemView {
 		const actions = containerEl.createDiv({ cls: 'ochat-actions' });
 		actions.createEl('button', { text: 'Test endpoint', cls: 'mod-cta' }, (button) => {
 			button.addEventListener('click', () => {
-				void this.testEndpoint(endpointInput.value);
+				void this.testEndpoint(endpointInput.value, false);
 			});
 		});
 		actions.createEl('button', { text: 'Retry default' }, (button) => {
 			button.addEventListener('click', () => {
-				void this.testEndpoint('http://localhost:11434');
+				void this.testEndpoint('http://localhost:11434', false);
 			});
 		});
 	}
@@ -643,27 +759,34 @@ export class OChatView extends ItemView {
 			cls: 'ochat-review-title',
 			text: `${patches.length} pending edit${patches.length === 1 ? '' : 's'}`
 		});
-		reviewHeading.createDiv({
-			cls: 'ochat-review-subtitle',
-			text: patches.length === 1 ? patches[0].path : `${patches.length} Markdown files`
-		});
+		if (patches.length === 1) {
+			const subtitle = reviewHeading.createDiv({ cls: 'ochat-review-subtitle' });
+			this.renderPathLabel(subtitle, patches[0].path, 'ochat-path-label');
+		} else {
+			reviewHeading.createDiv({
+				cls: 'ochat-review-subtitle',
+				text: `${patches.length} Markdown files`
+			});
+		}
 
 		for (const patch of patches) {
 			const patchEl = reviewEl.createDiv({ cls: 'ochat-patch' });
 			if (patches.length > 1) {
-				patchEl.createDiv({ cls: 'ochat-patch-path', text: patch.path });
+				const pathEl = patchEl.createDiv({ cls: 'ochat-patch-path' });
+				this.renderPathLabel(pathEl, patch.path, 'ochat-path-label');
 			}
 			patchEl.createDiv({ cls: 'ochat-patch-rationale', text: patch.rationale });
 			const diff = patchEl.createDiv({ cls: 'ochat-diff', attr: { 'aria-label': `Proposed changes for ${patch.path}` } });
-			for (const line of patch.original.split('\n')) {
-				const row = diff.createDiv({ cls: 'ochat-diff-line ochat-diff-line-removed' });
-				row.createSpan({ cls: 'ochat-diff-prefix', text: '−' });
-				row.createSpan({ cls: 'ochat-diff-text', text: line || ' ' });
-			}
-			for (const line of patch.replacement.split('\n')) {
-				const row = diff.createDiv({ cls: 'ochat-diff-line ochat-diff-line-added' });
-				row.createSpan({ cls: 'ochat-diff-prefix', text: '+' });
-				row.createSpan({ cls: 'ochat-diff-text', text: line || ' ' });
+			const variants = {
+				del: { cls: 'ochat-diff-line-removed', prefix: '−' },
+				add: { cls: 'ochat-diff-line-added', prefix: '+' },
+				context: { cls: 'ochat-diff-line-context', prefix: ' ' }
+			};
+			for (const line of buildUnifiedDiff(patch.original, patch.replacement)) {
+				const variant = variants[line.kind];
+				const row = diff.createDiv({ cls: `ochat-diff-line ${variant.cls}` });
+				row.createSpan({ cls: 'ochat-diff-prefix', text: variant.prefix });
+				row.createSpan({ cls: 'ochat-diff-text', text: line.text || ' ' });
 			}
 		}
 
@@ -724,6 +847,8 @@ export class OChatView extends ItemView {
 	}
 
 	private async submitPrompt(prompt: string, mode: SubmitMode): Promise<void> {
+		const token = ++this.requestToken;
+
 		try {
 			this.setStatus('Building context...');
 			this.attachContextFiles(this.plugin.resolvePromptContextPaths(prompt));
@@ -733,14 +858,25 @@ export class OChatView extends ItemView {
 					: prompt;
 			const messages = await this.plugin.buildMessages(requestPrompt, this.history, this.contextFilePaths);
 
+			if (token !== this.requestToken) {
+				return;
+			}
+
 			this.history.push({ role: 'user', content: prompt });
 			this.messageTimes.push(Date.now());
 			this.isAwaitingResponse = true;
+			this.renderComposerAction();
 			this.renderTranscript();
 			this.setStatus('Waiting for model...');
 
 			const answer = await this.plugin.chat(messages);
+
+			if (token !== this.requestToken) {
+				return;
+			}
+
 			this.isAwaitingResponse = false;
+			this.renderComposerAction();
 
 			if (mode === 'edit') {
 				await this.handleEditAnswer(answer);
@@ -752,7 +888,12 @@ export class OChatView extends ItemView {
 			this.setStatus('Ready.');
 			this.renderTranscript();
 		} catch (error) {
+			if (token !== this.requestToken) {
+				return;
+			}
+
 			this.isAwaitingResponse = false;
+			this.renderComposerAction();
 			const message = error instanceof Error ? error.message : String(error);
 			this.setStatus(message);
 			this.renderTranscript();
@@ -782,29 +923,66 @@ export class OChatView extends ItemView {
 			return;
 		}
 
-		const results = await this.plugin.applyPatches(patches, true);
-		this.history.push({
-			role: 'assistant',
-			content: results.map((result) => JSON.stringify(result)).join('\n')
-		});
-		this.messageTimes.push(Date.now());
+		await this.applyPatches(patches);
 	}
 
 	private async applyPendingPatches(): Promise<void> {
-		if (this.pendingPatches.length === 0) {
+		await this.applyPatches([...this.pendingPatches]);
+	}
+
+	/**
+	 * Writes the given patches and records them against the transcript row so
+	 * the result reads as a sentence with an undo, rather than serialized
+	 * result objects.
+	 */
+	private async applyPatches(patches: PatchProposal[]): Promise<void> {
+		if (patches.length === 0) {
 			return;
 		}
 
 		try {
-			const results = await this.plugin.applyPatches(this.pendingPatches, true);
-			this.pendingPatches = [];
-			this.history.push({
-				role: 'assistant',
-				content: results.map((result) => JSON.stringify(result)).join('\n')
-			});
-			this.messageTimes.push(Date.now());
+			const results = await this.plugin.applyPatches(patches, true);
+			const applied = patches.filter((_, index) => results[index]?.status === 'applied');
+
+			for (const result of results) {
+				if (result.status === 'rejected') {
+					new Notice(`Skipped ${result.path}: ${result.reason}`);
+				}
+			}
+
+			this.pendingPatches = this.pendingPatches.filter((patch) => !applied.includes(patch));
+
+			if (applied.length > 0) {
+				const summary = `Applied ${applied.length} edit${applied.length === 1 ? '' : 's'}.`;
+				this.appliedEdits.set(this.history.length, { patches: applied, undone: false });
+				this.history.push({ role: 'assistant', content: summary });
+				this.messageTimes.push(Date.now());
+				this.setStatus(summary);
+			}
+
 			this.renderTranscript();
-			new Notice('Applied reviewed edits.');
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			new Notice(message);
+			this.setStatus(message);
+		}
+	}
+
+	private async undoApplied(record: { patches: PatchProposal[]; undone: boolean }): Promise<void> {
+		try {
+			const inverted = [...record.patches].reverse().map(invertPatchProposal);
+			const results = await this.plugin.applyPatches(inverted, true);
+			const failed = results.filter((result) => result.status !== 'applied');
+
+			if (failed.length > 0) {
+				new Notice('Could not undo every edit. The note has changed since it was applied.');
+				this.renderTranscript();
+				return;
+			}
+
+			record.undone = true;
+			this.setStatus('Reverted the applied edits.');
+			this.renderTranscript();
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			new Notice(message);
@@ -832,15 +1010,25 @@ export class OChatView extends ItemView {
 		}
 
 		this.onboardingProbeStarted = true;
-		await this.refreshModels();
+
+		try {
+			await this.plugin.discoverAvailableModels();
+		} catch {
+			// A failed probe is expected when no server is running; the setup
+			// panel already explains what to do next.
+		}
+
+		this.render();
 	}
 
-	private async testEndpoint(baseUrl: string): Promise<void> {
+	private async testEndpoint(baseUrl: string, completeSetup = true): Promise<void> {
 		try {
 			this.setStatus('Testing endpoint...');
 			this.setTestResult('Testing endpoint...', 'pending');
 			await this.plugin.updateBaseUrl(baseUrl);
-			const models = await this.plugin.refreshAvailableModels();
+			const models = completeSetup
+				? await this.plugin.refreshAvailableModels()
+				: await this.plugin.discoverAvailableModels();
 			const message =
 				models.length > 0
 					? `Success. Found ${models.length} model${models.length === 1 ? '' : 's'}. Selected ${this.plugin.settings.model}.`
