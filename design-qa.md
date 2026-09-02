@@ -37,4 +37,18 @@ No actionable P0, P1, or P2 differences remain.
 - P3: At unusually wide sidebar sizes, the transcript has more horizontal whitespace than the narrow reference. This is acceptable responsive behavior and retains the same reading order.
 - P3: The primary accent inherits the active Obsidian theme rather than forcing VS Code blue; this is intentional host integration.
 
+## API-key authentication addendum
+
+- Source visual truth: `/Users/raniendu/.codex/visualizations/2026/08/28/01a04ab6-1e98-76f2-be30-72c08f12a318/show-me-api-key-ux.svg.png`
+- Implementation screenshot: `/Users/raniendu/PycharmProjects/OChat/artifacts/ochat-api-key-sidebar-live-crop.png`
+- Side-by-side comparison: `/Users/raniendu/PycharmProjects/OChat/artifacts/ochat-api-key-design-comparison.png`
+- Viewport: Obsidian desktop 1.13.7 with OChat in the right sidebar.
+- State: light theme, local Ollama endpoint, no API-key secret selected, successful endpoint test with five models found.
+
+The implementation keeps the approved interaction model while using Obsidian's native components: the API-key row opens the host's secret-linking flow, raw credentials are never rendered in OChat, and the existing endpoint test verifies model discovery through the same authenticated request path used by chat. The full Obsidian settings page was also checked after a plugin reload and presents the API-key selector directly after Base URL.
+
+The empty-secret state preserves the existing local flow. A live `http://localhost:11434` test completed successfully without an Authorization header, returned five models, and retained the selected model. Automated request-boundary coverage confirms that both provider families attach the selected bearer token for discovery and chat, reject credentials over non-local plaintext HTTP, and provide recovery guidance for missing secrets and 401 responses. At compact sidebar heights, the connection panel scrolls independently; the API-key selector and Test endpoint action remain reachable without moving the composer.
+
+No actionable P0, P1, or P2 differences remain for the API-key flow. The visible differences from the concept—light theme, native `Link…` label, and inherited purple accent—come from Obsidian's host theme and native `SecretComponent`, rather than custom credential UI.
+
 final result: passed

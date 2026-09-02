@@ -10,6 +10,7 @@ Current release: `0.1.0`.
 - First-run setup that checks the default Ollama endpoint and shows a model picker when local models are found.
 - Ollama provider using `POST /api/chat` and `GET /api/tags`.
 - OpenAI-compatible provider using `/v1/chat/completions` and `/v1/models`.
+- Optional bearer-token authentication using Obsidian's secure secret storage.
 - Active note, selected text, explicit `@note` attachments, and ranked Markdown vault snippets in context.
 - Compact assistant composer with context chips, `@` note suggestions, Ask/Edit toggle, and icon controls.
 - Rendered Markdown chat responses using Obsidian's Markdown renderer.
@@ -23,6 +24,8 @@ Current release: `0.1.0`.
 OChat sends prompt text, active-note content, selected text, and selected vault snippets to the configured model endpoint. The default endpoint is `http://localhost:11434`.
 
 Localhost and private LAN endpoints are allowed without extra acknowledgement. Public endpoints require an explicit acknowledgement in settings because note and vault context may leave your machine.
+
+For an authenticated endpoint, create or select an Obsidian secret in OChat's **API key** setting. OChat stores only the secret's ID in plugin settings and adds the secret value to requests as an `Authorization: Bearer …` header. To protect the credential in transit, API keys require HTTPS except when the endpoint is on localhost. Leave the setting empty for local endpoints that do not require authentication.
 
 OChat does not include telemetry, ads, remote assets, or an auto-update mechanism.
 
@@ -50,6 +53,8 @@ curl http://localhost:11434/api/tags
 4. In OChat settings, use provider `Ollama`, base URL `http://localhost:11434`, and model `llama3.2`.
 
 When OChat opens for the first time, it also checks `http://localhost:11434` automatically. If models are found, choose one from the model picker. If Ollama is running somewhere else, enter that endpoint in the setup panel and test it.
+
+Hosted Ollama and OpenAI-compatible endpoints can use the same setup flow: enter the base URL, select an API key secret if required, acknowledge public-network use, then test the endpoint to discover models.
 
 ## Context workflow
 

@@ -1,4 +1,4 @@
-import { ItemView, MarkdownRenderer, Notice, setIcon, WorkspaceLeaf } from 'obsidian';
+import { ItemView, MarkdownRenderer, Notice, SecretComponent, setIcon, WorkspaceLeaf } from 'obsidian';
 import { parseAssistantResponse } from './assistant-response';
 import { getComposerPanel, toggleToolsPanel } from './composer-tools';
 import { OCHAT_DISPLAY_NAME, OCHAT_VIEW_TYPE } from './constants';
@@ -472,12 +472,22 @@ export class OChatView extends ItemView {
 		containerEl.createDiv({ cls: 'ochat-connection-title', text: 'Settings' });
 
 		const endpointRow = containerEl.createDiv({ cls: 'ochat-setting-row' });
-		endpointRow.createDiv({ cls: 'ochat-setting-label', text: 'Ollama endpoint' });
+		endpointRow.createDiv({ cls: 'ochat-setting-label', text: 'Base URL' });
 		const endpointInput = endpointRow.createEl('input', {
 			type: 'text',
 			value: this.plugin.settings.baseUrl,
 			cls: 'ochat-endpoint-input'
 		});
+
+		const apiKeyRow = containerEl.createDiv({ cls: 'ochat-setting-row' });
+		apiKeyRow.createDiv({ cls: 'ochat-setting-label', text: 'API key (optional)' });
+		const apiKeyControl = apiKeyRow.createDiv({ cls: 'ochat-secret-control' });
+		new SecretComponent(this.app, apiKeyControl)
+			.setValue(this.plugin.settings.apiKeySecretId)
+			.onChange(async (value) => {
+				await this.plugin.updateApiKeySecretId(value);
+				this.setStatus(value.trim() ? 'API key selected. Test the endpoint to verify it.' : 'API key cleared.');
+			});
 
 		const modelRow = containerEl.createDiv({ cls: 'ochat-setting-row' });
 		modelRow.createDiv({ cls: 'ochat-setting-label', text: 'Default model' });

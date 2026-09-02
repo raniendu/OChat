@@ -9,6 +9,7 @@ import { OCHAT_VIEW_TYPE } from './constants';
 import { buildContextBundle, buildUserMessage } from './context';
 import { applyModelDiscovery, isOnboardingRequired } from './onboarding';
 import { applyPatchProposals } from './patch-applier';
+import { executeAuthenticatedRequest } from './providers/common';
 import { createModelProvider } from './providers/provider-client';
 import { classifyEndpoint } from './providers/url-policy';
 import { searchVaultSnippets } from './search';
@@ -124,6 +125,13 @@ export default class OChatPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
+	async updateApiKeySecretId(secretId: string): Promise<void> {
+		this.settings.apiKeySecretId = secretId.trim();
+		this.settings.availableModels = [];
+		this.settings.setupComplete = false;
+		await this.saveSettings();
+	}
+
 	async selectModel(model: string): Promise<void> {
 		this.settings.model = model.trim();
 		this.settings.setupComplete = this.settings.model.length > 0;
@@ -235,15 +243,23 @@ export default class OChatPlugin extends Plugin {
 	}
 
 	private async executeRequest(request: RequestDescriptor): Promise<unknown> {
-		const response = await requestUrl({
-			url: request.url,
-			method: request.method,
-			headers: request.headers,
-			contentType: request.method === 'POST' ? 'application/json' : undefined,
-			body: request.body === undefined ? undefined : JSON.stringify(request.body)
-		});
+		return executeAuthenticatedRequest<unknown>(
+			request,
+			this.settings.apiKeySecretId,
+			(secretId) => this.app.secretStorage.getSecret(secretId),
+			async (authenticatedRequest) => {
+				const response = await requestUrl({
+					url: authenticatedRequest.url,
+					method: authenticatedRequest.method,
+					headers: authenticatedRequest.headers,
+					contentType: authenticatedRequest.method === 'POST' ? 'application/json' : undefined,
+					body:
+						authenticatedRequest.body === undefined ? undefined : JSON.stringify(authenticatedRequest.body)
+				});
 
-		return response.json;
+				return response.json as unknown;
+			}
+		);
 	}
 
 	private assertEndpointAllowed(): void {

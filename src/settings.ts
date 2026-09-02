@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, SecretComponent, Setting } from 'obsidian';
 import type OChatPlugin from './main';
 import { getModelSelectOptions } from './model-options';
 import { classifyEndpoint } from './providers/url-policy';
@@ -43,6 +43,17 @@ export class OChatSettingTab extends PluginSettingTab {
 						await this.plugin.updateBaseUrl(value);
 					});
 			});
+
+		new Setting(containerEl)
+			.setName('API key')
+			.setDesc('Optional. Select an Obsidian secret to send as a bearer token. HTTPS is required except for localhost.')
+			.addComponent((container) =>
+				new SecretComponent(this.app, container)
+					.setValue(this.plugin.settings.apiKeySecretId)
+					.onChange(async (value) => {
+						await this.plugin.updateApiKeySecretId(value);
+					})
+			);
 
 		const endpoint = classifyEndpoint(this.plugin.settings.baseUrl);
 		if (endpoint.requiresAcknowledgement) {
