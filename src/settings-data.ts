@@ -3,6 +3,7 @@ import type { OChatSettings } from './types';
 export const DEFAULT_SETTINGS: OChatSettings = {
 	provider: 'ollama',
 	baseUrl: 'http://localhost:11434',
+	apiKeySecretId: '',
 	model: 'llama3.2',
 	availableModels: [],
 	setupComplete: false,
@@ -16,14 +17,21 @@ export const DEFAULT_SETTINGS: OChatSettings = {
 };
 
 export function normalizeSettings(data: Partial<OChatSettings> | null | undefined): OChatSettings {
+	const storedSettings = {
+		...(data ?? {})
+	} as Partial<OChatSettings> & { apiKey?: unknown };
+	delete storedSettings.apiKey;
+
 	const settings = {
 		...DEFAULT_SETTINGS,
-		...(data ?? {})
+		...storedSettings
 	};
 
 	return {
 		...settings,
 		provider: settings.provider === 'openai-compatible' ? 'openai-compatible' : 'ollama',
+		apiKeySecretId:
+			typeof settings.apiKeySecretId === 'string' ? settings.apiKeySecretId.trim() : DEFAULT_SETTINGS.apiKeySecretId,
 		model:
 			typeof settings.model === 'string' && settings.model.trim().length > 0
 				? settings.model.trim()

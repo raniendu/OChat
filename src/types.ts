@@ -48,6 +48,7 @@ export type ComposerMode = 'edit' | 'ask';
 export interface OChatSettings {
 	provider: ProviderKind;
 	baseUrl: string;
+	apiKeySecretId: string;
 	model: string;
 	availableModels: string[];
 	setupComplete: boolean;

@@ -9,6 +9,11 @@ import { OCHAT_VIEW_TYPE } from './constants';
 import { buildContextBundle, buildUserMessage } from './context';
 import { applyModelDiscovery, isOnboardingRequired } from './onboarding';
 import { applyPatchProposals } from './patch-applier';
+import {
+	normalizeProviderRequestError,
+	resolveApiKeySecret,
+	withBearerToken
+} from './providers/common';
 import { createModelProvider } from './providers/provider-client';
 import { classifyEndpoint } from './providers/url-policy';
 import { searchVaultSnippets } from './search';
@@ -124,6 +129,13 @@ export default class OChatPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
+	async updateApiKeySecretId(secretId: string): Promise<void> {
+		this.settings.apiKeySecretId = secretId.trim();
+		this.settings.availableModels = [];
+		this.settings.setupComplete = false;
+		await this.saveSettings();
+	}
+
 	async selectModel(model: string): Promise<void> {
 		this.settings.model = model.trim();
 		this.settings.setupComplete = this.settings.model.length > 0;
@@ -222,15 +234,26 @@ export default class OChatPlugin extends Plugin {
 	}
 
 	private async executeRequest(request: RequestDescriptor): Promise<unknown> {
-		const response = await requestUrl({
-			url: request.url,
-			method: request.method,
-			headers: request.headers,
-			contentType: request.method === 'POST' ? 'application/json' : undefined,
-			body: request.body === undefined ? undefined : JSON.stringify(request.body)
-		});
+		const hasSelectedSecret = this.settings.apiKeySecretId.trim().length > 0;
 
-		return response.json;
+		try {
+			const token = resolveApiKeySecret(this.settings.apiKeySecretId, (secretId) =>
+				this.app.secretStorage.getSecret(secretId)
+			);
+			const authenticatedRequest = withBearerToken(request, token ?? '');
+			const response = await requestUrl({
+				url: authenticatedRequest.url,
+				method: authenticatedRequest.method,
+				headers: authenticatedRequest.headers,
+				contentType: authenticatedRequest.method === 'POST' ? 'application/json' : undefined,
+				body:
+					authenticatedRequest.body === undefined ? undefined : JSON.stringify(authenticatedRequest.body)
+			});
+
+			return response.json;
+		} catch (error) {
+			throw normalizeProviderRequestError(error, hasSelectedSecret);
+		}
 	}
 
 	private assertEndpointAllowed(): void {
