@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -35,9 +37,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          package_version="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
           manifest_version="$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version")"
-          if [[ "${manifest_version}" != "${GITHUB_REF_NAME}" ]]; then
-            echo "Tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}."
+          manifest_min_app="$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).minAppVersion")"
+          versions_min_app="$(node -p "JSON.parse(require('fs').readFileSync('versions.json', 'utf8'))[process.env.GITHUB_REF_NAME] ?? ''")"
+          if [[ "${GITHUB_REF_NAME}" != "${package_version}" || "${GITHUB_REF_NAME}" != "${manifest_version}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME}, package version ${package_version}, and manifest version ${manifest_version} must match."
+            exit 1
+          fi
+          if [[ "${versions_min_app}" != "${manifest_min_app}" ]]; then
+            echo "versions.json maps ${GITHUB_REF_NAME} to ${versions_min_app}, expected ${manifest_min_app}."
             exit 1
           fi
 

@@ -7,13 +7,12 @@ import type { ProviderKind } from './types';
 export interface OChatSettingDefinitionContext {
 	app: App;
 	plugin: OChatPlugin;
-	update: () => void;
+	refreshDomState: () => void;
 	renderSecret: (setting: Setting) => void;
 }
 
 export function createOChatSettingDefinitions(context: OChatSettingDefinitionContext): SettingDefinitionItem[] {
-	const { app, plugin, update, renderSecret } = context;
-	const endpoint = classifyEndpoint(plugin.settings.baseUrl);
+	const { app, plugin, refreshDomState, renderSecret } = context;
 
 	return [
 		{
@@ -32,7 +31,6 @@ export function createOChatSettingDefinitions(context: OChatSettingDefinitionCon
 								.onChange(async (value) => {
 									plugin.settings.provider = value as ProviderKind;
 									await plugin.saveSettings();
-									update();
 								});
 						});
 					}
@@ -44,7 +42,7 @@ export function createOChatSettingDefinitions(context: OChatSettingDefinitionCon
 						setting.addText((text) => {
 							text.setValue(plugin.settings.baseUrl).onChange(async (value) => {
 								await plugin.updateBaseUrl(value);
-								update();
+								refreshDomState();
 							});
 						});
 					}
@@ -56,8 +54,8 @@ export function createOChatSettingDefinitions(context: OChatSettingDefinitionCon
 				},
 				{
 					name: 'Acknowledge remote endpoint',
-					desc: endpoint.reason,
-					visible: endpoint.requiresAcknowledgement,
+					desc: 'Required before sending note or vault context to a public endpoint.',
+					visible: () => classifyEndpoint(plugin.settings.baseUrl).requiresAcknowledgement,
 					render: (setting) => {
 						setting.addToggle((toggle) => {
 							toggle.setValue(plugin.settings.remoteEndpointAcknowledged).onChange(async (value) => {

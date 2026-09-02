@@ -2,8 +2,6 @@
 
 OChat is an Obsidian plugin for chatting with local models using the active Markdown note and relevant vault context. It supports Ollama by default and OpenAI-compatible local servers such as LM Studio or llama.cpp server.
 
-Current release: `0.1.0`.
-
 ## Features
 
 - Right sidebar chat for active-note and vault-aware questions.

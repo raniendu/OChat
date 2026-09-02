@@ -15,7 +15,7 @@ export class OChatSettingTab extends PluginSettingTab {
 		return createOChatSettingDefinitions({
 			app: this.app,
 			plugin: this.plugin,
-			update: () => this.update(),
+			refreshDomState: () => this.refreshDomState(),
 			renderSecret: (setting) => {
 				setting.addComponent((container) =>
 					new SecretComponent(this.app, container)
