@@ -1,4 +1,5 @@
 import type { RequestDescriptor } from '../types';
+import { classifyEndpoint } from './url-policy';
 
 export function joinUrl(baseUrl: string, path: string): string {
 	const base = baseUrl.trim().replace(/\/+$/, '');
@@ -68,6 +69,36 @@ export function normalizeProviderRequestError(error: unknown, hasSelectedSecret:
 	}
 
 	return error instanceof Error ? error : new Error(String(error));
+}
+
+export async function executeAuthenticatedRequest<T>(
+	request: RequestDescriptor,
+	secretId: string,
+	readSecret: (id: string) => string | null,
+	transport: (request: RequestDescriptor) => Promise<T>
+): Promise<T> {
+	const hasSelectedSecret = secretId.trim().length > 0;
+
+	try {
+		const token = resolveApiKeySecret(secretId, readSecret);
+		assertBearerTransportAllowed(request.url, token !== null);
+		return await transport(withBearerToken(request, token ?? ''));
+	} catch (error) {
+		throw normalizeProviderRequestError(error, hasSelectedSecret);
+	}
+}
+
+function assertBearerTransportAllowed(url: string, hasToken: boolean): void {
+	if (!hasToken) {
+		return;
+	}
+
+	const protocol = new URL(url).protocol;
+	if (protocol === 'https:' || (protocol === 'http:' && classifyEndpoint(url).kind === 'localhost')) {
+		return;
+	}
+
+	throw new Error('API keys require HTTPS except for localhost. Use an HTTPS Base URL or clear the API key.');
 }
 
 function isUnauthorizedError(error: unknown): boolean {

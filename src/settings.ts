@@ -46,7 +46,7 @@ export class OChatSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('API key')
-			.setDesc('Optional. Select an Obsidian secret to send as a bearer token. The secret value is not stored in plugin data.')
+			.setDesc('Optional. Select an Obsidian secret to send as a bearer token. HTTPS is required except for localhost.')
 			.addComponent((container) =>
 				new SecretComponent(this.app, container)
 					.setValue(this.plugin.settings.apiKeySecretId)

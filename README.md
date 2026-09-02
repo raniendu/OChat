@@ -25,7 +25,7 @@ OChat sends prompt text, active-note content, selected text, and selected vault 
 
 Localhost and private LAN endpoints are allowed without extra acknowledgement. Public endpoints require an explicit acknowledgement in settings because note and vault context may leave your machine.
 
-For an authenticated endpoint, create or select an Obsidian secret in OChat's **API key** setting. OChat stores only the secret's ID in plugin settings and adds the secret value to requests as an `Authorization: Bearer …` header. Leave the setting empty for local endpoints that do not require authentication.
+For an authenticated endpoint, create or select an Obsidian secret in OChat's **API key** setting. OChat stores only the secret's ID in plugin settings and adds the secret value to requests as an `Authorization: Bearer …` header. To protect the credential in transit, API keys require HTTPS except when the endpoint is on localhost. Leave the setting empty for local endpoints that do not require authentication.
 
 OChat does not include telemetry, ads, remote assets, or an auto-update mechanism.
 
