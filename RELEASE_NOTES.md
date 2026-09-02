@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.2.0
+
+- Add optional bearer-token authentication backed by Obsidian's secure secret storage, including actionable 401 errors and HTTPS enforcement outside localhost.
+- Migrate plugin settings to Obsidian's searchable declarative settings API.
+- Document vault enumeration and contribution expectations.
+- Add a tested release workflow that publishes provenance-attested plugin assets.
+
 ## 0.1.0
 
 - Add right-sidebar chat for local Ollama and OpenAI-compatible model servers.
@@ -8,6 +15,5 @@
 - Render assistant Markdown with Obsidian's Markdown renderer.
 - Add collapsed thinking sections for `<think>...</think>` output and a live `thinking...` indicator while requests run.
 - Add visible endpoint-test success, warning, and failure states in the sidebar settings panel.
-- Add optional bearer-token authentication backed by Obsidian's secure secret storage, including actionable 401 errors.
 - Add Markdown-only patch review and apply workflow.
 - Add local install script, MIT license, and release metadata.

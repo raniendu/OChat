@@ -2,8 +2,6 @@
 
 OChat is an Obsidian plugin for chatting with local models using the active Markdown note and relevant vault context. It supports Ollama by default and OpenAI-compatible local servers such as LM Studio or llama.cpp server.
 
-Current release: `0.1.0`.
-
 ## Features
 
 - Right sidebar chat for active-note and vault-aware questions.
@@ -25,13 +23,15 @@ OChat sends prompt text, active-note content, selected text, and selected vault 
 
 Localhost and private LAN endpoints are allowed without extra acknowledgement. Public endpoints require an explicit acknowledgement in settings because note and vault context may leave your machine.
 
+For `@note` suggestions and lexical context search, OChat enumerates Markdown file paths in the vault and reads eligible Markdown files. It ignores Obsidian's configuration folder and any folders listed under **Excluded folders**. Set **Maximum vault results** to `0` to prevent automatic vault snippets from being added to requests; explicitly attached notes are still read when selected.
+
 For an authenticated endpoint, create or select an Obsidian secret in OChat's **API key** setting. OChat stores only the secret's ID in plugin settings and adds the secret value to requests as an `Authorization: Bearer …` header. To protect the credential in transit, API keys require HTTPS except when the endpoint is on localhost. Leave the setting empty for local endpoints that do not require authentication.
 
 OChat does not include telemetry, ads, remote assets, or an auto-update mechanism.
 
 ## Requirements
 
-- Obsidian 1.12.7 or newer.
+- Obsidian 1.13.0 or newer.
 - Node.js 18 or newer for development.
 - Ollama or another compatible local model server.
 
@@ -92,9 +92,11 @@ npm run install-local -- "/path/to/Your Vault"
 
 Then open Obsidian, enable community plugins, and enable OChat from Settings.
 
-## Installing from a GitHub release
+## Installation
 
-Until OChat is approved in the Obsidian Community directory, install it manually from a GitHub release:
+In Obsidian, open **Settings → Community plugins → Browse**, search for **OChat**, then select **Install** and **Enable**.
+
+For a manual installation from a GitHub release:
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release.
 2. Create this folder in your vault: `.obsidian/plugins/ochat`.
