@@ -19,9 +19,9 @@ export class OChatSettingTab extends PluginSettingTab {
 			renderSecret: (setting) => {
 				setting.addComponent((container) =>
 					new SecretComponent(this.app, container)
-						.setValue(this.plugin.settings.apiKeySecretId)
+						.setValue(this.plugin.settings.apiKeySecretId ?? '')
 						.onChange(async (value) => {
-							await this.plugin.updateApiKeySecretId(value);
+							await this.plugin.updateApiKeySecretId(value ?? '');
 						})
 				);
 			}

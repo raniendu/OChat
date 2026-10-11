@@ -483,10 +483,10 @@ export class OChatView extends ItemView {
 		apiKeyRow.createDiv({ cls: 'ochat-setting-label', text: 'API key (optional)' });
 		const apiKeyControl = apiKeyRow.createDiv({ cls: 'ochat-secret-control' });
 		new SecretComponent(this.app, apiKeyControl)
-			.setValue(this.plugin.settings.apiKeySecretId)
+			.setValue(this.plugin.settings.apiKeySecretId ?? '')
 			.onChange(async (value) => {
-				await this.plugin.updateApiKeySecretId(value);
-				this.setStatus(value.trim() ? 'API key selected. Test the endpoint to verify it.' : 'API key cleared.');
+				await this.plugin.updateApiKeySecretId(value ?? '');
+				this.setStatus((value ?? '').trim() ? 'API key selected. Test the endpoint to verify it.' : 'API key cleared.');
 			});
 
 		const modelRow = containerEl.createDiv({ cls: 'ochat-setting-row' });
