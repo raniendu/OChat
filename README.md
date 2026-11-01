@@ -1,10 +1,11 @@
 # OChat
 
-OChat is an Obsidian plugin for chatting with local models using the active Markdown note and relevant vault context. It supports Ollama by default and OpenAI-compatible local servers such as LM Studio or llama.cpp server.
+OChat is an Obsidian plugin for chatting with local or cloud-hosted models using the active Markdown note and relevant vault context. It defaults to local Ollama and also supports OpenAI-compatible servers such as LM Studio or llama.cpp server, plus remote endpoints that expose either supported API.
 
 ## Features
 
 - Right sidebar chat for active-note and vault-aware questions.
+- Local, private LAN, and cloud-hosted model endpoints, with local Ollama as the default.
 - First-run setup that checks the default Ollama endpoint and shows a model picker when local models are found.
 - Ollama provider using `POST /api/chat` and `GET /api/tags`.
 - OpenAI-compatible provider using `/v1/chat/completions` and `/v1/models`.
@@ -19,7 +20,7 @@ OChat is an Obsidian plugin for chatting with local models using the active Mark
 
 ## Privacy and network use
 
-OChat sends prompt text, active-note content, selected text, and selected vault snippets to the configured model endpoint. The default endpoint is `http://localhost:11434`.
+OChat sends prompt text, active-note content, selected text, explicitly attached notes, and selected vault snippets to the configured model endpoint. The default endpoint is `http://localhost:11434`. When you configure a cloud endpoint, this context is sent to that provider.
 
 Localhost and private LAN endpoints are allowed without extra acknowledgement. Public endpoints require an explicit acknowledgement in settings because note and vault context may leave your machine.
 
@@ -33,7 +34,7 @@ OChat does not include telemetry, ads, remote assets, or an auto-update mechanis
 
 - Obsidian 1.13.0 or newer.
 - Node.js 18 or newer for development.
-- Ollama or another compatible local model server.
+- Access to an Ollama or OpenAI-compatible model endpoint, running locally, on a private LAN, or in the cloud.
 
 ## Ollama quick start
 
@@ -54,7 +55,15 @@ curl http://localhost:11434/api/tags
 
 When OChat opens for the first time, it also checks `http://localhost:11434` automatically. If models are found, choose one from the model picker. If Ollama is running somewhere else, enter that endpoint in the setup panel and test it.
 
-Hosted Ollama and OpenAI-compatible endpoints can use the same setup flow: enter the base URL, select an API key secret if required, acknowledge public-network use, then test the endpoint to discover models.
+## Cloud and remote endpoint setup
+
+OChat supports hosted endpoints that expose the Ollama API or an OpenAI-compatible API. The endpoint must support both model discovery and chat for the selected protocol.
+
+1. In **Settings → OChat**, set **Provider** to `Ollama` or `OpenAI-compatible`, matching your endpoint's API.
+2. Set **Base URL** to the endpoint's API base. For an OpenAI-compatible endpoint, include any required prefix such as `/v1`, for example `https://models.example.com/v1`. OChat appends `/chat/completions` and `/models`, so enter the base URL rather than the full chat URL. For hosted Ollama, OChat appends `/api/chat` and `/api/tags`.
+3. If authentication is required, create or select an Obsidian secret in **API key**. OChat sends it as a bearer token; API keys require HTTPS except on localhost.
+4. For a public endpoint, enable **Acknowledge remote endpoint** before testing or chatting. Your prompts and included note context will be sent to that endpoint.
+5. Open the OChat sidebar settings, choose **Test endpoint**, then select an available model.
 
 ## Context workflow
 
