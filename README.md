@@ -1,6 +1,6 @@
 # OChat
 
-OChat is an Obsidian plugin for chatting with local or cloud-hosted models using the active Markdown note and relevant vault context. It defaults to local Ollama and also supports OpenAI-compatible servers such as LM Studio or llama.cpp server, plus remote endpoints that expose either supported API.
+OChat is an Obsidian plugin for chatting with local or cloud-hosted models using the active Markdown note and relevant vault context. It defaults to local Ollama and also supports OpenAI-compatible servers such as Magnitude, LM Studio, and llama.cpp server, plus remote endpoints that expose either supported API.
 
 ## Features
 
@@ -54,6 +54,12 @@ curl http://localhost:11434/api/tags
 4. In OChat settings, use provider `Ollama`, base URL `http://localhost:11434`, and model `llama3.2`.
 
 When OChat opens for the first time, it also checks `http://localhost:11434` automatically. If models are found, choose one from the model picker. If Ollama is running somewhere else, enter that endpoint in the setup panel and test it.
+
+## Magnitude quick start
+
+1. Open [Magnitude](https://magnitude.dev/) and download a model.
+2. In **Settings → OChat**, choose **OpenAI-compatible** and set **Base URL** to `http://127.0.0.1:10100/inference/v1`.
+3. In the OChat sidebar settings, choose **Test endpoint** and select the model.
 
 ## Cloud and remote endpoint setup
 
